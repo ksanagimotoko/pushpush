@@ -1,0 +1,275 @@
+  
+memory[55001]->1
+
+
+drawOutBlock(995500)
+
+
+px->2
+py->5
+
+dx->0
+dy->0
+
+oRkey->0
+oLkey->0
+oUkey->0
+oDkey->0
+
+
+#--- Ball Position Modeling ---
+memory[200]->2 #hor
+memory[201]->4 #ver
+
+memory[202]->4
+memory[203]->5
+
+memory[204]->7
+memory[205]->5
+
+memory[206]->6
+memory[207]->6
+
+#---- Home position -----
+memory[300]->2 #hor
+memory[301]->6 #ver
+
+memory[302]->3
+memory[303]->6
+
+memory[304]->2
+memory[305]->7
+
+memory[306]->3
+memory[307]->7
+
+
+while 1
+	#drawing Ball And Home
+	drawHome(555555)
+	drawBall()
+	drawGrid(10)
+
+	#draw Player
+	drawSquare(py,px,009900)
+	memory[55000]->1  #draw on screen
+
+	#erase player and Ball on memory
+	drawSquare(py,px,00) 
+	eraseBall()
+
+	# key Control
+	nRkey->memory[50007]
+	if (oRkey=0)*(nRkey=1)
+		dx->1	
+	oRkey -> nRkey
+
+	nLkey->memory[50006]
+	if (oLkey=0)*(nLkey=1)
+		dx->-1	
+	oLkey -> nLkey
+	
+	nUkey->memory[50004]
+	if (oUkey=0)*(nUkey=1)
+		dy->-1	
+	oUkey -> nUkey
+
+	nDkey->memory[50005]
+	if (oDkey=0)*(nDkey=1)
+		dy->1	
+	oDkey -> nDkey
+
+	#backup position
+	oPx->px
+	oPy->py
+
+	# update Position
+	px->px+dx
+	py->py+dy
+
+	touchWall->touchTheWall(py, px)
+	if touchWall
+		#go back to position before move
+		px->oPx 
+		py->oPy
+	
+	if (1-touchWall)
+		if touchTheBall(py,px)
+			px->px+dx
+			py->py+dy
+
+			touchBallOrWall->touchTheBall(py,px)+touchTheWall(py,px)
+			if touchBallOrWall
+				px->oPx
+				py->oPy
+			if (1-touchBallOrWall)
+				px->px-dx
+				py->py-dy
+
+				memory[200+memory[0]]->memory[200+memory[0]]+dx
+				memory[200+memory[0]+1]->memory[200+memory[0]+1]+dy
+				if checkBallsInHome()=2
+					drawOutBlock(000000)
+
+		
+
+
+
+	#reset diff
+	dx->0
+	dy->0
+
+
+#================ FUNCTIONS ======================	
+
+
+def checkBallsInHome()
+	count->0
+	i->0
+	while i<7
+		if(memory[200+i]=memory[300+i])*(memory[201+i]=memory[301+i])
+			count->count+1
+		i->i+2
+	out->count
+
+def touchTheBall(py, px)
+	touch->0
+	i->0
+	while i<7
+		if(py=memory[200+i+1])*(px=memory[200+i])
+			touch->touch+1
+			memory[0]->i # check which ball is touched
+		i->i+2
+	out ->touch 
+
+		
+
+
+def eraseBall()
+	i->0
+	while i<7
+		drawSquare(memory[200+i+1],memory[200+i],0)
+		i->i+2
+
+
+def drawHome(color)
+	i->0
+	while i<7
+		drawWallWithNoMemoryWrite(memory[300+i+1],memory[300+i],color)
+		i->i+2
+
+
+def drawBall()
+	i->0
+	while i<7
+		drawSquare(memory[200+i+1],memory[200+i],000099)
+		i->i+2
+
+
+def touchTheWall(py, px)
+	out -> memory[100+(py*10)+px]
+
+
+def drawOutBlock(color)
+	i->1
+	while i<8
+		drawWall(2,i,color)
+		i->i+1
+	
+	drawWall(3,1,color)
+	drawWall(3,7,color)
+	drawWall(3,8,color)
+	drawWall(3,9,color)
+
+	drawWall(4,0,color)
+	drawWall(4,1,color)
+	drawWall(4,3,color)
+	drawWall(4,4,color)
+	drawWall(4,5,color)
+	drawWall(4,9,color)
+
+	
+	drawWall(5,0,color)
+	drawWall(5,9,color)
+	
+	drawWall(6,0,color)
+	drawWall(6,4,color)
+	drawWall(6,8,color)
+	drawWall(6,9,color)
+
+	drawWall(7,0,color)
+	drawWall(7,1,color)
+	drawWall(7,4,color)
+	drawWall(7,8,color)
+	
+	i->1
+	while i<9
+		drawWall(8,i,color)
+		i->i+1
+
+	drawGrid(10)
+
+
+
+def drawGrid(n)
+	offset -> 100/n
+
+	y->0
+	while y<100
+		x->0
+		while x<100
+			memory[60000+(y*100)+x]->999999
+			x->x+1
+		y->y+offset
+
+
+	x->0
+	while x<100
+		y->0
+		while y<100
+			memory[60000+(y*100)+x]->999999
+			y->y+1
+		x->x+offset
+
+
+
+def drawWallWithNoMemoryWrite(yo,xo,color)
+
+	yo->yo*10
+	xo->xo*10
+	y->0
+	while y<10
+		
+		x->0
+		while x<10
+			memory[60000+((yo+y)*100)+xo+x]->color
+			x->x+1
+		y->y+1
+
+
+def drawWall(yo,xo,color)
+
+	memory[100+(yo*10)+xo]->1
+	yo->yo*10
+	xo->xo*10
+	y->0
+	while y<10
+		
+		x->0
+		while x<10
+			memory[60000+((yo+y)*100)+xo+x]->color
+			x->x+1
+		y->y+1
+
+def drawSquare(yo,xo,color)
+	distance->7
+	yo->yo*10+2
+	xo->xo*10+2
+	y->0
+	while y<distance
+		
+		x->0
+		while x<distance
+			memory[60000+((yo+y)*100)+xo+x]->color
+			x->x+1
+		y->y+1
